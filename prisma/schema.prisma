@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model app_meta {
+  meta_key   String  @id @db.VarChar(64)
+  meta_value String? @db.LongText
+}
+
+model assets {
+  asset_id                String                @id @db.VarChar(100)
+  seq_no                  Int?
+  asset_name              String?               @db.VarChar(255)
+  lab_code                String?               @db.VarChar(120)
+  asset_type              String?               @db.VarChar(255)
+  asset_kind              String?               @db.VarChar(255)
+  asset_register_id       String?               @db.VarChar(120)
+  budget_year             Int?                  @db.SmallInt
+  medical_equipment_code  String?               @db.VarChar(120)
+  brand                   String?               @db.VarChar(120)
+  model                   String?               @db.VarChar(120)
+  serial_no               String?               @db.VarChar(120)
+  unit_cost               Decimal?              @db.Decimal(14, 2)
+  asset_status            String?               @db.VarChar(120)
+  location                String?               @db.VarChar(255)
+  current_location        String?               @db.VarChar(255)
+  responsible_person      String?               @db.VarChar(255)
+  maintenance_status_id   Int?                  @db.SmallInt
+  maintenance_status_name String?               @db.VarChar(120)
+  image_url               String?               @db.Text
+  last_maintenance_date   DateTime?             @db.Date
+  last_maintenance_note   String?               @db.Text
+  reported_by             String?               @db.VarChar(255)
+  reported_at             DateTime?             @db.DateTime(0)
+  confirmed_date          DateTime?             @db.Date
+  confirmed_by            String?               @db.VarChar(255)
+  confirmed_at            DateTime?             @db.DateTime(0)
+  created_at              DateTime              @default(now()) @db.DateTime(0)
+  updated_at              DateTime              @default(now()) @db.DateTime(0)
+  status                  String?               @db.VarChar(50)
+  seq                     Int?
+  asset_code              String?               @unique(map: "asset_code") @db.VarChar(255)
+  lab_tool_code           String?               @db.VarChar(100)
+  serial_number           String?               @db.VarChar(255)
+  department              String?               @db.VarChar(255)
+  note                    String?               @db.Text
+  purchase_date           DateTime?             @db.Date
+  price                   Decimal?              @db.Decimal(10, 2)
+  acquired_date           DateTime?             @db.Date
+  maintenance_statuses    maintenance_statuses? @relation(fields: [maintenance_status_id], references: [status_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_assets_maint_status")
+  maintenance_tickets     maintenance_tickets[]
+
+  @@index([maintenance_status_id], map: "fk_assets_maint_status")
+  @@index([lab_code], map: "idx_assets_lab_code")
+  @@index([location], map: "idx_assets_location")
+}
+
+model calibration_items {
+  cal_id                String    @id @db.VarChar(32)
+  code                  String?   @db.VarChar(120)
+  equipment_name        String?   @db.VarChar(255)
+  asset_register_id     String?   @db.VarChar(120)
+  manufacturer          String?   @db.VarChar(120)
+  model                 String?   @db.VarChar(120)
+  serial_no             String?   @db.VarChar(120)
+  location              String?   @db.VarChar(255)
+  last_calibration_date DateTime? @db.Date
+  due_date              DateTime? @db.Date
+  calibration_frequency String?   @db.VarChar(120)
+  verification          Boolean?
+  note                  String?   @db.Text
+  month1                Boolean?
+  month2                Boolean?
+  month3                Boolean?
+  month4                Boolean?
+  month5                Boolean?
+  month6                Boolean?
+  month7                Boolean?
+  month8                Boolean?
+  month9                Boolean?
+  month10               Boolean?
+  month11               Boolean?
+  month12               Boolean?
+  result_file_url       String?   @db.Text
+  result_file_name      String?   @db.VarChar(255)
+  raw_json              Json?
+  created_at            DateTime  @default(now()) @db.DateTime(0)
+  updated_at            DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([code], map: "idx_cal_code")
+  @@index([due_date], map: "idx_cal_due")
+  @@index([location], map: "idx_cal_location")
+}
+
+model maintenance_statuses {
+  status_id           Int                   @id @default(autoincrement()) @db.SmallInt
+  status_code         String                @db.VarChar(50)
+  status_name         String                @unique(map: "uk_maintenance_status_name") @db.VarChar(120)
+  sort_order          Int                   @default(0) @db.SmallInt
+  assets              assets[]
+  maintenance_tickets maintenance_tickets[]
+}
+
+model maintenance_tickets {
+  ticket_id            BigInt                @id @default(autoincrement())
+  asset_id             String?               @db.VarChar(100)
+  status_id            Int?                  @db.SmallInt
+  status_name          String?               @db.VarChar(120)
+  note                 String?               @db.Text
+  reported_by          String?               @db.VarChar(255)
+  reported_at          DateTime              @default(now()) @db.DateTime(0)
+  confirmed_by         String?               @db.VarChar(255)
+  confirmed_at         DateTime?             @db.DateTime(0)
+  confirmed_date       DateTime?             @db.Date
+  assets               assets?               @relation(fields: [asset_id], references: [asset_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tickets_asset")
+  maintenance_statuses maintenance_statuses? @relation(fields: [status_id], references: [status_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tickets_status")
+
+  @@index([status_id], map: "fk_tickets_status")
+  @@index([asset_id], map: "idx_tickets_asset")
+  @@index([reported_at], map: "idx_tickets_reported_at")
+}
+
+model users {
+  user_id        Int        @id @default(autoincrement())
+  username       String     @unique(map: "uk_users_username") @db.VarChar(100)
+  password_hash  String?    @db.VarChar(255)
+  password_plain String?    @db.VarChar(255)
+  display_name   String?    @db.VarChar(255)
+  role           users_role @default(user)
+  created_at     DateTime   @default(now()) @db.DateTime(0)
+  updated_at     DateTime   @default(now()) @db.DateTime(0)
+}
+
+model calibration {
+  id               Int       @id @default(autoincrement())
+  asset_code       String    @unique(map: "asset_code") @db.VarChar(100)
+  asset_name       String    @db.VarChar(255)
+  last_calibration DateTime? @db.Date
+  next_calibration DateTime? @db.Date
+  value            Decimal?  @db.Decimal(10, 2)
+  created_at       DateTime? @default(now()) @db.Timestamp(0)
+  updated_at       DateTime? @default(now()) @db.Timestamp(0)
+}
+
+enum users_role {
+  admin
+  user
+}
